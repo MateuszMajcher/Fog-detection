@@ -32,7 +32,7 @@ MainWindow::~MainWindow()
  *  Ustawienie obrazu dla label
  */
 void MainWindow::setImage(const QImage& newImage) {
-    image = fog->getFogDetect(newImage);
+    image = fog->getFogDetect(newImage, threshold);
 
     imageLabel->setPixmap(QPixmap::fromImage(image));
     imageLabel->setScaledContents(true);

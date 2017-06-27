@@ -23,20 +23,28 @@ struct object {
     int h;
 };
 
-void detectObject(cv::Mat const& image, QList<object> cordList);
-
 class FogDetect {
 private:
+    //obraz testowy
     cv::Mat testImage;
+    //Wczytane wspolrzedne do badania
     QList<object> cordList;
+    //rezultat badania obrazu bez mgły
     QMap<int, int> ClearResultArea;
+    //rezultat badania obrazu testowego
+    QMap<int, double> detectResult;
 
+    void drawRectangle(cv::Mat& img, int x, int y, int w, int h, cv::Scalar color);
+    void printResult(cv::Mat& img);
+    double getPercentage(int x, int y);
 public:
     FogDetect();
     void setTestImage(QImage image);
     void setCordObject(QList<object> cordList);
     void detectObject(cv::Mat const& image, QList<object> cordList, QMap<int, int>& reasultCord);
-    QImage getFogDetect(const QImage &image);
+    QImage getFogDetect(const QImage &image, int threshold);
+
+
 
 };
 
