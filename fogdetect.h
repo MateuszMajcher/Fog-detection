@@ -34,8 +34,10 @@ private:
     //rezultat badania obrazu testowego
     QMap<int, double> detectResult;
 
+    void analysisResults(QMap<int, double> result, int threshold, int& visibility, int& fog);
+    void drawObject(cv::Mat& img, QMap<int, double> result,int threshold);
     void drawRectangle(cv::Mat& img, int x, int y, int w, int h, cv::Scalar color);
-    void printResult(cv::Mat& img);
+    void printResult(cv::Mat& img, int visibility, int fog);
     double getPercentage(int x, int y);
 public:
     FogDetect();

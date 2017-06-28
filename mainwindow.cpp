@@ -3,10 +3,10 @@
 
 
 MainWindow::MainWindow()
-    :imageLabel(new QLabel)
+    :fog(new FogDetect)
+    ,imageLabel(new QLabel)
     ,scrollArea(new QScrollArea)
-    ,scaleFactor(1)
-    ,fog(new FogDetect)
+    ,scaleFactor(1.0)
 {
     imageLabel->setBackgroundRole(QPalette::Base);
     imageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
@@ -29,7 +29,7 @@ MainWindow::~MainWindow()
 
 
 /*
- *  Ustawienie obrazu dla label
+ *  Ustawienie obrazu testowego
  */
 void MainWindow::setImage(const QImage& newImage) {
     image = fog->getFogDetect(newImage, threshold);
@@ -50,6 +50,23 @@ void MainWindow::setImage(const QImage& newImage) {
 
 }
 
+bool MainWindow::saveFile(const QString &filename) {
+    QImageWriter writer(filename);
+
+    if (!writer.write(image)) {
+        QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
+                                 tr("Cannot write %1: %2")
+                                 .arg(QDir::toNativeSeparators(filename)), writer.errorString());
+        return false;
+    }
+    const QString message = tr("Wrote \"%1\"").arg(QDir::toNativeSeparators(filename));
+    statusBar()->showMessage(message);
+    return true;
+}
+
+/*
+ *  Ładowanie obrazu do QImage
+ */
 bool MainWindow::loadImage(const QString& path, QImage& image) {
     QImageReader reader(path);
     reader.setAutoTransform(true);
@@ -64,7 +81,7 @@ bool MainWindow::loadImage(const QString& path, QImage& image) {
 }
 
 /*
- *  Ładowanie obrazu
+ *  Ładowanie obrazu testowego
  */
 bool MainWindow::loadTestImage(const QString& path) {
     QImage newImage;
@@ -81,7 +98,7 @@ bool MainWindow::loadTestImage(const QString& path) {
 }
 
 /*
- *  Ładowanie obrazu
+ *  Ładowanie obrazu bez mgly
  */
 bool MainWindow::loadClearImage(const QString& path) {
     QImage newImage;
@@ -126,7 +143,7 @@ bool MainWindow::loadObjectsFile(const QString& path) {
 }
 
 /*
- *  Init dla okna wyboru
+ *  Init dla okna wyboru obrazu
  */
 static void initializeImageFileDialog(QFileDialog& dialog, QFileDialog::AcceptMode acceptMode) {
     static bool firstDialog = true;
@@ -150,7 +167,7 @@ static void initializeImageFileDialog(QFileDialog& dialog, QFileDialog::AcceptMo
     }
 
 /*
- *  Otwarcie okna wyboru obrazów
+ *  Otwarcie okna wyboru obrazu testowego
  */
 void MainWindow::openImage() {
     QFileDialog dialog(this, tr("Open file"));
@@ -159,7 +176,7 @@ void MainWindow::openImage() {
 }
 
 /*
- *  Otwarcie okna wyboru obrazów
+ *  Otwarcie okna wyboru obrazu bez mgly
  */
 void MainWindow::openClearImage() {
     QFileDialog dialog(this, tr("Open file"));
@@ -167,8 +184,9 @@ void MainWindow::openClearImage() {
     while (dialog.exec() == QDialog::Accepted && !loadClearImage(dialog.selectedFiles().first())){}
 }
 
-
-
+/*
+ *  Otwarcie okna wyboru dla pliku z objektami
+ */
 void MainWindow::openObjects() {
     QFileDialog fileDialog(this, tr("Open file with objects"));
     fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
@@ -184,6 +202,12 @@ void MainWindow::openObjects() {
     }
 }
 
+void MainWindow::saveAs() {
+    QFileDialog dialog(this, tr("Save image as"));
+    initializeImageFileDialog(dialog, QFileDialog::AcceptSave);
+    while (dialog.exec() == QDialog::Accepted && !saveFile(dialog.selectedFiles().first())) {}
+}
+
 /*
  *  kopiowanie obrazu
  */
@@ -191,6 +215,21 @@ void MainWindow::copy() {
 #ifndef QT_NO_CLIPBOARD
     QGuiApplication::clipboard()->setImage(image);
 #endif
+}
+
+void MainWindow::about() {
+    QMessageBox::about(this, tr("Detekcja mgły"),
+                tr("<p> <b>Image Viewer</b> example shows how to combine QLabel "
+                   "and QScrollArea to display an image. QLabel is typically used "
+                   "for displaying a text, but it can also display an image. "
+                   "QScrollArea provides a scrolling view around another widget. "
+                   "If the child widget exceeds the size of the frame, QScrollArea "
+                   "automatically provides scroll bars. </p><ul>"
+                   "<li>Mateusz Majcher</li>"
+                   "<li>Monika Zaleska</li>"
+                   "<li>Ariel Trybek</li>"
+                   "<li>Bartłomiej Loranty</li>"
+                   "</ul>"));
 }
 
 /*
@@ -210,12 +249,16 @@ void MainWindow::createActions() {
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
     QAction *openObjectAct = fileMenu->addAction(tr("Open object file"), this, &MainWindow::openObjects);
     QAction *openClearImage = fileMenu->addAction(tr("Open clear image"), this, &MainWindow::openClearImage);
-    QAction *openAct = fileMenu->addAction(tr("&Open image"), this, &MainWindow::openImage);
+    QAction *openTestAct = fileMenu->addAction(tr("&Open image"), this, &MainWindow::openImage);
+    openTestAct->setShortcut(QKeySequence::Open);
+
+    saveAsAct = fileMenu->addAction(tr("&Save as..."), this, &MainWindow::saveAs);
+    saveAsAct->setEnabled(false);
     fileMenu->addSeparator();
     QAction *exitAct = fileMenu->addAction(tr("&Exit"), this, &QWidget::close);
 
     QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
-    setThresholdsAct = editMenu->addAction(tr("set thresholds"), this, &MainWindow::setThreshold);
+    setThresholdsAct = editMenu->addAction(tr("Set thresholds"), this, &MainWindow::setThreshold);
     copyAct = editMenu->addAction(tr("&Copy"), this, &MainWindow::copy);
     copyAct->setShortcut(QKeySequence::Copy);
     copyAct->setEnabled(false);
@@ -241,6 +284,10 @@ void MainWindow::createActions() {
     fitToWindowAct->setEnabled(false);
     fitToWindowAct->setCheckable(true);
     fitToWindowAct->setShortcut(tr("Ctrl+F"));
+
+    QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
+    helpMenu->addAction(tr("&About"), this, &MainWindow::about);
+    helpMenu->addAction(tr("About QT"), &QApplication::aboutQt);
 }
 
 /*
@@ -315,6 +362,7 @@ void MainWindow::adjustScrollBar(QScrollBar *scrollBar, double factor) {
  *  Uaktualnienie akcji
  */
 void MainWindow::updateActions() {
+    saveAsAct->setEnabled(true);
     copyAct->setEnabled(!image.isNull());
     zoomInAct->setEnabled(!fitToWindowAct->isChecked());
     zoomOutAct->setEnabled(!fitToWindowAct->isChecked());

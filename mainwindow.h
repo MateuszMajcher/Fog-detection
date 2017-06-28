@@ -27,6 +27,7 @@ private slots:
     void openImage();
     void openClearImage();
     void openObjects();
+    void saveAs();
     void copy();
     void setThreshold();
     void zoomIn();
@@ -34,10 +35,12 @@ private slots:
     void fitToWindow();
     void fitToWindowWithRatio();
     void normalSize();
+    void about();
 
 private:
     void createActions();
     void setImage(const QImage& newImage);
+    bool saveFile(const QString& filename);
     void updateActions();
     void scaleImage(double factor);
     void adjustScrollBar(QScrollBar *scrollBar, double factor);
@@ -51,6 +54,8 @@ private:
     QList<object> objectList;
     int threshold = 5;
 
+
+    QAction *saveAsAct;
     QAction *copyAct;
     QAction* setThresholdsAct;
     QAction *zoomInAct;
